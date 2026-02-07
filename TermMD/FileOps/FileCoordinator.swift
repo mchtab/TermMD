@@ -57,15 +57,56 @@ class FileCoordinator: ObservableObject, FileCoordinating {
 
         do {
             let content = try String(contentsOf: url, encoding: .utf8)
+
+            // Check if it's a markdown file
+            let ext = url.pathExtension.lowercased()
+            let isMarkdown = ext == "md" || ext == "markdown"
+
+            var finalURL = url
+
+            if !isMarkdown {
+                // Ask user if they want to convert to .md
+                let alert = NSAlert()
+                alert.messageText = "Convert to Markdown?"
+                alert.informativeText = "'\(url.lastPathComponent)' is not a Markdown file. Would you like to save it as a new .md file?"
+                alert.alertStyle = .informational
+                alert.addButton(withTitle: "Save as .md")
+                alert.addButton(withTitle: "Open Anyway")
+                alert.addButton(withTitle: "Cancel")
+
+                let result = alert.runModal()
+
+                if result == .alertFirstButtonReturn {
+                    // Save as .md
+                    let savePanel = NSSavePanel()
+                    savePanel.allowedContentTypes = [.plainText]
+                    let baseName = url.deletingPathExtension().lastPathComponent
+                    savePanel.nameFieldStringValue = "\(baseName).md"
+                    savePanel.directoryURL = url.deletingLastPathComponent()
+                    savePanel.title = "Save as Markdown"
+
+                    let saveResponse = savePanel.runModal()
+                    guard saveResponse == .OK, let newURL = savePanel.url else { return false }
+
+                    // Write content to new file
+                    try content.write(to: newURL, atomically: true, encoding: .utf8)
+                    finalURL = newURL
+                } else if result == .alertThirdButtonReturn {
+                    // Cancel
+                    return false
+                }
+                // alertSecondButtonReturn = Open Anyway, continue with original URL
+            }
+
             editorModel.content = content
-            editorModel.currentFileURL = url
+            editorModel.currentFileURL = finalURL
             editorModel.isDirty = false
             editorModel.lastSavedHash = sha256(content)
             editorModel.conflictBannerVisible = false
 
             // Auto-start Claude with this file
-            let dir = url.deletingLastPathComponent()
-            terminalController?.runClaude(in: dir, command: appSettings.claudeCommand, filePath: url.path)
+            let dir = finalURL.deletingLastPathComponent()
+            terminalController?.runClaude(in: dir, command: appSettings.claudeCommand, filePath: finalURL.path)
 
             return true
         } catch {
