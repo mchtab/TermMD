@@ -21,6 +21,7 @@ The magic happens when you select text in the editor and right-click **"Send to 
 - **Auto-start Claude**: Opening a file automatically starts Claude Code in that directory
 - **File Watching**: Detects external file changes (like when Claude edits your file) and auto-reloads
 - **Conflict Resolution**: If you have unsaved changes when the file changes on disk, shows a banner to Reload or Ignore
+- **File Format Conversion**: Open any text file and convert to .md, or open Word docs (.doc/.docx) which are automatically converted
 
 ## Keyboard Shortcuts
 
@@ -75,6 +76,23 @@ When you select text and use "Send to Claude (with line refs)", TermMD:
 4. Focuses the terminal so you can type your change request
 
 Claude Code then reads the file, understands the context, and can edit it directly on disk. TermMD detects the change and reloads automatically.
+
+## Supported File Formats
+
+TermMD can open various file types:
+
+| Format | Behavior |
+|--------|----------|
+| `.md`, `.markdown` | Opens directly |
+| `.txt`, `.swift`, `.py`, etc. | Prompts to convert to .md or open as-is |
+| `.doc`, `.docx` | Converts to .md using macOS `textutil` |
+
+When opening non-markdown files, you have three options:
+- **Save as .md**: Creates a markdown copy (recommended for Claude editing)
+- **Open Anyway**: Opens the original file (Claude can still edit it)
+- **Cancel**: Aborts the open
+
+Word documents are always converted to markdown since they're binary files that can't be edited as text.
 
 ## Settings
 
